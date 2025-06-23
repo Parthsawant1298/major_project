@@ -2,26 +2,37 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Brain, User, LogOut, ChevronDown, Settings, Calendar } from "lucide-react";
+import { 
+  Brain, 
+  User, 
+  LogOut, 
+  ChevronDown, 
+  Settings, 
+  Calendar,
+  BarChart3,
+  Users,
+  Star,
+  Award,
+  Code,
+  Briefcase
+} from "lucide-react";
 
-export default function Navbar() {
+export default function HostNavbar() {
   const router = useRouter();
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const [host, setHost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   
-  // Navigation items
+  // Host navigation items
   const navItems = [
-    { name: "Dashboard", path: "/main" },
-    { name: "Courses", path: "/courses" },
-    { name: "Events", path: "/events" },
-    { name: "Projects", path: "/projects" },
-    { name: "Quizzes", path: "/quizzes" },
-    { name: "Resources", path: "/resources" },
+    { name: "Dashboard", path: "/host/dashboard", icon: BarChart3 },
+    { name: "My Events", path: "/host/events", icon: Calendar },
+    { name: "Analytics", path: "/host/analytics", icon: BarChart3 },
+    { name: "Attendees", path: "/host/attendees", icon: Users },
   ];
   
   // Handle scroll effect
@@ -45,7 +56,7 @@ export default function Navbar() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/user', {
+      const response = await fetch('/api/host/auth/user', {
         method: 'GET',
         credentials: 'include',
         cache: 'no-store'
@@ -53,13 +64,13 @@ export default function Navbar() {
       
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        setHost(data.host);
       } else {
         throw new Error('Not authenticated');
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      router.replace('/login');
+      console.error('Host auth check failed:', error);
+      router.replace('/host/login');
     } finally {
       setIsLoading(false);
     }
@@ -82,17 +93,17 @@ export default function Navbar() {
   // Handle logout
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
+      const response = await fetch('/api/host/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
       
       if (response.ok) {
-        setUser(null);
+        setHost(null);
         router.replace('/');
       }
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Host logout failed:', error);
     }
   };
 
@@ -103,7 +114,7 @@ export default function Navbar() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Brain className="h-6 w-6 text-blue-600" />
-            <span className="text-gray-900 font-bold">HireAI</span>
+            <span className="text-gray-900 font-bold">HireAI Host</span>
           </div>
           <div className="animate-pulse bg-gray-200 h-8 w-8 rounded-full"></div>
         </div>
@@ -111,7 +122,7 @@ export default function Navbar() {
     );
   }
 
-  if (!user) {
+  if (!host) {
     return null;
   }
   
@@ -126,9 +137,10 @@ export default function Navbar() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/main" className="flex items-center gap-2 text-xl font-bold">
+          <Link href="/host/dashboard" className="flex items-center gap-2 text-xl font-bold">
             <Brain className="h-6 w-6 text-blue-600" />
             <span className="text-gray-900">HireAI</span>
+            <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Host</span>
           </Link>
           
           {/* Desktop Navigation */}
@@ -150,16 +162,25 @@ export default function Navbar() {
               ))}
             </ul>
 
-            {/* Host Button & User Profile Section (Desktop) */}
+            {/* Create Hackathon & Create Job Buttons & Host Profile Section (Desktop) */}
             <div className="flex items-center ml-8 space-x-4">
-              {/* Host Button */}
-              <Link href="/host/login">
-                <button className="bg-white text-blue-600 border border-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors duration-200">
-                  Host
+              {/* Create Hackathon Button */}
+              <Link href="/host/create-hackathon">
+                <button className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors duration-200 flex items-center space-x-2">
+                  <Code size={18} />
+                  <span>Create Hackathon</span>
                 </button>
               </Link>
 
-              {/* User Profile Dropdown */}
+              {/* Create Job & Internship Button */}
+              <Link href="/host/create-job">
+                <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2">
+                  <Briefcase size={18} />
+                  <span>Create Job & Internship</span>
+                </button>
+              </Link>
+
+              {/* Host Profile Dropdown */}
               <div className="relative" ref={profileMenuRef}>
                 <button 
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -167,18 +188,26 @@ export default function Navbar() {
                   aria-expanded={isProfileMenuOpen}
                   aria-haspopup="true"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-blue-200 overflow-hidden flex items-center justify-center">
-                    {user.profilePicture ? (
+                  <div className="relative w-10 h-10 rounded-full bg-gray-100 border-2 border-blue-200 overflow-hidden flex items-center justify-center">
+                    {host.profilePicture ? (
                       <img 
-                        src={user.profilePicture} 
-                        alt={user.name} 
+                        src={host.profilePicture} 
+                        alt={host.name} 
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <User size={20} className="text-blue-600" />
                     )}
+                    {host.isVerified && (
+                      <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
+                        <Award size={10} className="text-white" />
+                      </div>
+                    )}
                   </div>
-                  <span className="font-medium">{user.name?.split(' ')[0]}</span>
+                  <div className="text-left">
+                    <p className="font-medium text-sm">{host.name?.split(' ')[0]}</p>
+                    <p className="text-xs text-gray-500">{host.organization}</p>
+                  </div>
                   <ChevronDown 
                     size={16} 
                     className={`transition-transform duration-200 ${
@@ -188,28 +217,75 @@ export default function Navbar() {
                 </button>
                 
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-10 border border-gray-200">
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl py-2 z-10 border border-gray-200">
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                      <div className="flex items-center space-x-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                            {host.profilePicture ? (
+                              <img src={host.profilePicture} alt={host.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <User size={24} className="text-blue-600" />
+                            )}
+                          </div>
+                          {host.isVerified && (
+                            <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
+                              <Award size={8} className="text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 truncate">{host.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{host.email}</p>
+                          <p className="text-xs text-blue-600">{host.designation}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Host Stats */}
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <div className="flex items-center space-x-1">
+                          <Star size={12} className="text-yellow-500 fill-current" />
+                          <span className="text-gray-600">{host.rating || '0.0'}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Calendar size={12} className="text-blue-500" />
+                          <span className="text-gray-600">{host.totalEvents || 0} events</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          {host.isVerified ? (
+                            <span className="text-green-600 text-xs font-medium">Verified</span>
+                          ) : (
+                            <span className="text-orange-600 text-xs font-medium">Pending</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     
                     <Link 
-                      href="/profile" 
+                      href="/host/profile" 
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       <User size={16} className="mr-3" />
-                      <span>My Profile</span>
+                      <span>Host Profile</span>
                     </Link>
                     
                     <Link 
-                      href="/settings" 
+                      href="/host/settings" 
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       <Settings size={16} className="mr-3" />
                       <span>Settings</span>
+                    </Link>
+
+                    <Link 
+                      href="/host/analytics" 
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      <BarChart3 size={16} className="mr-3" />
+                      <span>Analytics</span>
                     </Link>
                     
                     <div className="border-t border-gray-100 mt-2 pt-2">
@@ -259,63 +335,83 @@ export default function Navbar() {
           <div className="lg:hidden bg-white border-t border-gray-200">
             <div className="container mx-auto px-4 py-6">
               <ul className="flex flex-col space-y-4">
-                {navItems.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.path}
-                      className={`text-gray-700 text-lg font-medium hover:text-blue-600 block py-2 ${
-                        pathname === item.path ? "text-blue-600" : ""
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
+                {navItems.map((item) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <li key={item.name}>
+                      <Link
+                        href={item.path}
+                        className={`text-gray-700 text-lg font-medium hover:text-blue-600 block py-2 flex items-center space-x-3 ${
+                          pathname === item.path ? "text-blue-600" : ""
+                        }`}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <IconComponent size={20} />
+                        <span>{item.name}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
 
-              {/* User Profile Section (Mobile) */}
+              {/* Host Profile Section (Mobile) */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className="w-12 h-12 rounded-full bg-gray-100 border-2 border-blue-200 overflow-hidden flex items-center justify-center">
-                    {user.profilePicture ? (
+                  <div className="relative w-12 h-12 rounded-full bg-gray-100 border-2 border-blue-200 overflow-hidden flex items-center justify-center">
+                    {host.profilePicture ? (
                       <img 
-                        src={user.profilePicture} 
-                        alt={user.name} 
+                        src={host.profilePicture} 
+                        alt={host.name} 
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <User size={24} className="text-blue-600" />
                     )}
+                    {host.isVerified && (
+                      <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1">
+                        <Award size={8} className="text-white" />
+                      </div>
+                    )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{user.name}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="font-medium text-gray-900">{host.name}</p>
+                    <p className="text-sm text-gray-500">{host.email}</p>
+                    <p className="text-xs text-blue-600">{host.designation}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  {/* Host Button - Mobile */}
+                  {/* Create Hackathon Button - Mobile */}
                   <Link 
-                    href="/host/login" 
-                    className="w-full bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
+                    href="/host/create-hackathon" 
+                    className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    <Calendar size={18} className="mr-2" />
-                    Host Event
+                    <Code size={18} className="mr-2" />
+                    Create Hackathon
+                  </Link>
+
+                  {/* Create Job & Internship Button - Mobile */}
+                  <Link 
+                    href="/host/create-job" 
+                    className="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Briefcase size={18} className="mr-2" />
+                    Create Job & Internship
                   </Link>
 
                   <Link 
-                    href="/profile" 
+                    href="/host/profile" 
                     className="w-full bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-600 px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <User size={18} className="mr-2" />
-                    My Profile
+                    Host Profile
                   </Link>
                   
                   <Link 
-                    href="/settings" 
+                    href="/host/settings" 
                     className="w-full bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-600 px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >

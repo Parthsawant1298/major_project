@@ -1,11 +1,11 @@
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import Contactpage from '@/components/Contact';
+import Footer from '@/components/Footer';
+import Headerpage  from '@/components/Header';
 
 export default function AboutPage() {
     return (
         <main>
-            <Navbar />
+            <Headerpage />
             <Contactpage />
             
             <Footer />

@@ -1,11 +1,10 @@
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import Faqpage from '@/components/Faq';
-import Testimonialsitem from '@/components/Testimonials';
+import Footer from '@/components/Footer';
+import Headerpage  from '@/components/Header';
 export default function AboutPage() {
     return (
         <main>
-            <Navbar />
+            <Headerpage  />
             <Faqpage />
             
             <Footer />
