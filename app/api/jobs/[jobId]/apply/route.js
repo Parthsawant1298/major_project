@@ -15,7 +15,7 @@ export async function POST(request, { params }) {
     }
 
     const { user } = authResult;
-    const { jobId } = params;
+    const { jobId } = await params;
 
     await connectDB();
 

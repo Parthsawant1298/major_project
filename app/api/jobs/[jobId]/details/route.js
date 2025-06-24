@@ -6,7 +6,7 @@ import { Job, Application } from '@/models/job';
 export async function GET(request, { params }) {
   try {
     await connectDB();
-    const { jobId } = params;
+    const { jobId } =await params;
 
     // Get job details with host information
     const job = await Job.findOne({ 
