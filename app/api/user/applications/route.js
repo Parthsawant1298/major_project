@@ -1,10 +1,10 @@
 // 🔗 9. API ROUTE - USER APPLICATIONS HISTORY  
 // File: app/api/user/applications/route.js
 // =================
-import { NextResponse } from 'next/server';
-import { requireAuth } from '@/middleware/auth';
 import connectDB from '@/lib/mongodb';
+import { requireAuth } from '@/middleware/auth';
 import { Application } from '@/models/job';
+import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {

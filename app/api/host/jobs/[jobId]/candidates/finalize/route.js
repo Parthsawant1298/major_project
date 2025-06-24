@@ -1,11 +1,11 @@
 // 🔗 8. API ROUTE - HOST CANDIDATES SHORTLIST
 // File: app/api/host/jobs/[jobId]/candidates/finalize/route.js
 // =================
-import { NextResponse } from 'next/server';
-import { requireHostAuth } from '@/middleware/host-auth';
-import connectDB from '@/lib/mongodb';
-import { Job, Application } from '@/models/job';
 import { sendOfferEmail, sendRejectionEmail } from '@/lib/email-service';
+import connectDB from '@/lib/mongodb';
+import { requireHostAuth } from '@/middleware/host-auth';
+import { Application, Job } from '@/models/job';
+import { NextResponse } from 'next/server';
 
 export async function POST(request, { params }) {
   try {

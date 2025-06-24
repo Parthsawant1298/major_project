@@ -1,7 +1,7 @@
 // app/api/jobs/list/route.js
-import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Job } from '@/models/job';
+import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {

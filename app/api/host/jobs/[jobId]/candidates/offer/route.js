@@ -1,11 +1,11 @@
 // 🔗 12. API ROUTE - HOST OFFER LETTERS
 // File: app/api/host/jobs/[jobId]/candidates/offer/route.js
 // =================
-import { NextResponse } from 'next/server';
-import { requireHostAuth } from '@/middleware/host-auth';
-import connectDB from '@/lib/mongodb';
-import { Application } from '@/models/job';
 import { sendOfferEmail } from '@/lib/email-service';
+import connectDB from '@/lib/mongodb';
+import { requireHostAuth } from '@/middleware/host-auth';
+import { Application } from '@/models/job';
+import { NextResponse } from 'next/server';
 
 export async function POST(request, { params }) {
   try {

@@ -13,8 +13,10 @@ import {
   Users,
   Star,
   Award,
-  Code,
-  Briefcase
+  Briefcase,
+  Building2,
+  FileText,
+  Eye
 } from "lucide-react";
 
 export default function HostNavbar() {
@@ -27,12 +29,12 @@ export default function HostNavbar() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   
-  // Host navigation items
+  // Host navigation items for HireAI platform
   const navItems = [
     { name: "Dashboard", path: "/host/dashboard", icon: BarChart3 },
-    { name: "My Events", path: "/host/events", icon: Calendar },
+    { name: "My Jobs", path: "/host/jobs", icon: Briefcase },
     { name: "Analytics", path: "/host/analytics", icon: BarChart3 },
-    { name: "Attendees", path: "/host/attendees", icon: Users },
+    { name: "Candidates", path: "/host/candidates", icon: Users },
   ];
   
   // Handle scroll effect
@@ -162,21 +164,21 @@ export default function HostNavbar() {
               ))}
             </ul>
 
-            {/* Create Hackathon & Create Job Buttons & Host Profile Section (Desktop) */}
+            {/* Action Buttons & Host Profile Section (Desktop) */}
             <div className="flex items-center ml-8 space-x-4">
-              {/* Create Hackathon Button */}
-              <Link href="/host/create-hackathon">
-                <button className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors duration-200 flex items-center space-x-2">
-                  <Code size={18} />
-                  <span>Create Hackathon</span>
+              {/* Create Job Button */}
+              <Link href="/host/create-job">
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2">
+                  <Briefcase size={18} />
+                  <span>Post Job</span>
                 </button>
               </Link>
 
-              {/* Create Job & Internship Button */}
-              <Link href="/host/create-job">
+              {/* View Platform Button */}
+              <Link href="/jobs">
                 <button className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2">
-                  <Briefcase size={18} />
-                  <span>Create Job & Internship</span>
+                  <Eye size={18} />
+                  <span>View Platform</span>
                 </button>
               </Link>
 
@@ -248,8 +250,8 @@ export default function HostNavbar() {
                           <span className="text-gray-600">{host.rating || '0.0'}</span>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <Calendar size={12} className="text-blue-500" />
-                          <span className="text-gray-600">{host.totalEvents || 0} events</span>
+                          <Briefcase size={12} className="text-blue-500" />
+                          <span className="text-gray-600">{host.totalEvents || 0} jobs</span>
                         </div>
                         <div className="flex items-center space-x-1">
                           {host.isVerified ? (
@@ -271,12 +273,12 @@ export default function HostNavbar() {
                     </Link>
                     
                     <Link 
-                      href="/host/settings" 
+                      href="/host/jobs" 
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
-                      <Settings size={16} className="mr-3" />
-                      <span>Settings</span>
+                      <Briefcase size={16} className="mr-3" />
+                      <span>My Jobs</span>
                     </Link>
 
                     <Link 
@@ -286,6 +288,15 @@ export default function HostNavbar() {
                     >
                       <BarChart3 size={16} className="mr-3" />
                       <span>Analytics</span>
+                    </Link>
+
+                    <Link 
+                      href="/host/settings" 
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      <Settings size={16} className="mr-3" />
+                      <span>Settings</span>
                     </Link>
                     
                     <div className="border-t border-gray-100 mt-2 pt-2">
@@ -381,24 +392,24 @@ export default function HostNavbar() {
                 </div>
                 
                 <div className="space-y-2">
-                  {/* Create Hackathon Button - Mobile */}
-                  <Link 
-                    href="/host/create-hackathon" 
-                    className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <Code size={18} className="mr-2" />
-                    Create Hackathon
-                  </Link>
-
-                  {/* Create Job & Internship Button - Mobile */}
+                  {/* Post Job Button - Mobile */}
                   <Link 
                     href="/host/create-job" 
-                    className="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
+                    className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Briefcase size={18} className="mr-2" />
-                    Create Job & Internship
+                    Post Job
+                  </Link>
+
+                  {/* View Platform Button - Mobile */}
+                  <Link 
+                    href="/jobs" 
+                    className="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-center transition-all duration-300 font-medium flex items-center justify-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Eye size={18} className="mr-2" />
+                    View Platform
                   </Link>
 
                   <Link 

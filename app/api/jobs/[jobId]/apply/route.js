@@ -1,4 +1,8 @@
 // app/api/jobs/[jobId]/apply/route.js
+import { NextResponse } from 'next/server';
+import { requireAuth } from '@/middleware/auth';
+import connectDB from '@/lib/mongodb';
+import { Job, Application } from '@/models/job';
 import { analyzeResume } from '@/lib/ai-services';
 import { sendShortlistEmail } from '@/lib/email-service';
 import { extractTextFromPDF } from '@/lib/pdf-utils';

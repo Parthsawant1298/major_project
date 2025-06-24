@@ -1,9 +1,9 @@
 // app/api/host/jobs/[jobId]/questions/generate/route.js
-import { NextResponse } from 'next/server';
-import { requireHostAuth } from '@/middleware/host-auth';
-import connectDB from '@/lib/mongodb';
-import { Job } from '@/models/job';
 import { generateInterviewQuestions } from '@/lib/ai-services';
+import connectDB from '@/lib/mongodb';
+import { requireHostAuth } from '@/middleware/host-auth';
+import { Job } from '@/models/job';
+import { NextResponse } from 'next/server';
 
 export async function POST(request, { params }) {
   try {

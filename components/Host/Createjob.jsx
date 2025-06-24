@@ -1,4 +1,4 @@
-// app/host/create-job/page.js
+// components/host/Createjob.jsx
 "use client";
 
 import { useState } from 'react';

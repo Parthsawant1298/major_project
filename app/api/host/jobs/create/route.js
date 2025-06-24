@@ -1,9 +1,8 @@
 // app/api/host/jobs/create/route.js
-import { NextResponse } from 'next/server';
-import { requireHostAuth } from '@/middleware/host-auth';
 import connectDB from '@/lib/mongodb';
+import { requireHostAuth } from '@/middleware/host-auth';
 import { Job } from '@/models/job';
-import { generateInterviewQuestions } from '@/lib/ai-services';
+import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {

@@ -4,7 +4,6 @@ import connectDB from '@/lib/mongodb';
 import Host from '@/models/host';
 import { rateLimit } from '@/middleware/host-auth';
 
-
 export async function POST(request) {
   try {
     // Rate limiting

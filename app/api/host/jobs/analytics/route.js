@@ -1,10 +1,10 @@
 // 🔗 10. API ROUTE - HOST ANALYTICS
 // File: app/api/host/jobs/analytics/route.js
 // =================
-import { NextResponse } from 'next/server';
-import { requireHostAuth } from '@/middleware/host-auth';
 import connectDB from '@/lib/mongodb';
-import { Job, Application } from '@/models/job';
+import { requireHostAuth } from '@/middleware/host-auth';
+import { Application, Job } from '@/models/job';
+import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
