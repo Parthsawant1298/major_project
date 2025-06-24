@@ -15,7 +15,7 @@ export async function POST(request, { params }) {
     }
 
     const { host } = authResult;
-    const { jobId } = params;
+    const { jobId } = await params;
     const { selectedCandidateIds } = await request.json();
 
     await connectDB();

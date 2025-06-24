@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Eye, Users, BarChart3, Calendar } from 'lucide-react';
-import Navbar from '@/components/host/Navbar';
+import Navbar from '@/components/Host/Navbar';
 import Footer from '@/components/Footer';
 
 export default function HostJobsPage() {

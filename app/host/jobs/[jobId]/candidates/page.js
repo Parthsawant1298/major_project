@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Download, Eye, Mail, Star, Filter } from 'lucide-react';
-import Navbar from '@/components/host/Navbar';
+import Navbar from '@/components/Host/Navbar';
 import Footer from '@/components/Footer';
 
 export default function CandidatesDashboard() {
