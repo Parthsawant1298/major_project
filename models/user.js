@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true,
     match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address']
+    // Removed index: true to avoid duplicate index warning
   },
   password: {
     type: String,
@@ -61,7 +62,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Indexes for performance
+// Indexes for performance - only use schema.index() to avoid duplicates
 userSchema.index({ email: 1 });
 userSchema.index({ createdAt: -1 });
 

@@ -35,9 +35,26 @@ export async function POST(request, { params }) {
       interviewDuration: job.voiceInterviewDuration
     });
 
-    // Update job with generated questions
-    job.interviewQuestions = questions;
-    await job.save();
+    // Use findByIdAndUpdate to avoid version conflicts
+    const updatedJob = await Job.findByIdAndUpdate(
+      jobId,
+      { 
+        interviewQuestions: questions,
+        updatedAt: new Date()
+      },
+      { 
+        new: true, // Return the updated document
+        runValidators: true, // Run schema validators
+        useFindAndModify: false // Use native findOneAndUpdate
+      }
+    );
+
+    if (!updatedJob) {
+      return NextResponse.json(
+        { error: 'Failed to update job with questions' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
