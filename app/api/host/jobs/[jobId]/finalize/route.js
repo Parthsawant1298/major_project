@@ -1,4 +1,7 @@
-// app/api/host/jobs/[jobId]/finalize/route.js
+import { NextResponse } from 'next/server';
+import connectDB from '@/lib/mongodb';
+import { requireHostAuth } from '@/middleware/host-auth';
+import { Job } from '@/models/job';
 import { createVAPIAssistant, generateInterviewLink } from '@/lib/vapi-service';
 
 export async function POST(request, { params }) {

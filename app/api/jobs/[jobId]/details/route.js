@@ -1,6 +1,7 @@
-// app/api/jobs/[jobId]/details/route.js
+import { NextResponse } from 'next/server';
+import connectDB from '@/lib/mongodb';
 import { requireAuth } from '@/middleware/auth';
-import { Application } from '@/models/job';
+import { Job, Application } from '@/models/job';
 
 export async function GET(request, { params }) {
   try {

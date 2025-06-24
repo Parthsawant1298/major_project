@@ -1,4 +1,8 @@
-// app/api/host/jobs/[jobId]/questions/update/route.js
+import { NextResponse } from 'next/server';
+import connectDB from '@/lib/mongodb';
+import { requireHostAuth } from '@/middleware/host-auth';
+import { Job } from '@/models/job';
+
 export async function PUT(request, { params }) {
   try {
     const authResult = await requireHostAuth(request);
