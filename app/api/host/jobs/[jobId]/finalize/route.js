@@ -1,3 +1,4 @@
+// app/api/host/jobs/[jobId]/finalize/route.js - CORRECTED VERSION
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requireHostAuth } from '@/middleware/host-auth';
@@ -32,6 +33,8 @@ export async function POST(request, { params }) {
       );
     }
 
+    console.log('Creating VAPI assistant for job:', jobId);
+
     // Create VAPI assistant with questions
     const vapiAssistant = await createVAPIAssistant({
       jobTitle: job.jobTitle,
@@ -39,26 +42,36 @@ export async function POST(request, { params }) {
       duration: job.voiceInterviewDuration
     });
 
-    // Generate interview link
-    const interviewLink = generateInterviewLink(vapiAssistant.id, jobId);
+    console.log('VAPI assistant created:', vapiAssistant.id);
+
+    // FIXED: Generate interview link with proper URL
+    const baseUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const interviewLink = `${baseUrl}/interview/${jobId}?assistant=${vapiAssistant.id}`;
+
+    console.log('Generated interview link:', interviewLink);
 
     // Update job with VAPI details and publish
     job.vapiAssistantId = vapiAssistant.id;
     job.interviewLink = interviewLink;
     job.status = 'published';
+    job.updatedAt = new Date();
+    
     await job.save();
+
+    console.log('Job finalized and published:', jobId);
 
     return NextResponse.json({
       success: true,
       message: 'Job published successfully',
       jobId: job._id,
-      interviewLink: interviewLink
+      interviewLink: interviewLink,
+      vapiAssistantId: vapiAssistant.id
     });
 
   } catch (error) {
     console.error('Finalize job error:', error);
     return NextResponse.json(
-      { error: 'Failed to finalize job. Please try again.' },
+      { error: `Failed to finalize job: ${error.message}` },
       { status: 500 }
     );
   }

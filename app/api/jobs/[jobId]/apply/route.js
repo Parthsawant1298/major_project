@@ -1,10 +1,10 @@
-// app/api/jobs/[jobId]/apply/route.js
+// app/api/jobs/[jobId]/apply/route.js - CORRECTED VERSION
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/middleware/auth';
 import connectDB from '@/lib/mongodb';
 import { Job, Application } from '@/models/job';
 import { analyzeResume } from '@/lib/ai-services';
-import { sendShortlistEmail } from '@/lib/email-service';
+import { sendShortlistEmail, sendRejectionEmail, sendApplicationConfirmationEmail } from '@/lib/email-service';
 import { extractTextFromPDF } from '@/lib/pdf-utils';
 
 export async function POST(request, { params }) {
@@ -19,8 +19,8 @@ export async function POST(request, { params }) {
 
     await connectDB();
 
-    // Get job details
-    const job = await Job.findById(jobId);
+    // Get job details with host info
+    const job = await Job.findById(jobId).populate('hostId', 'name email organization');
     if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
@@ -76,14 +76,18 @@ export async function POST(request, { params }) {
     }
 
     // Validate resume file
-    if (resumeFile.size > 10 * 1024 * 1024) { // 10MB limit
+    if (resumeFile.size > 10 * 1024 * 1024) {
       return NextResponse.json(
         { error: 'Resume file size must be less than 10MB' },
         { status: 400 }
       );
     }
 
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedTypes = [
+      'application/pdf', 
+      'application/msword', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
     if (!allowedTypes.includes(resumeFile.type)) {
       return NextResponse.json(
         { error: 'Only PDF and Word documents are allowed' },
@@ -118,7 +122,7 @@ export async function POST(request, { params }) {
       coverLetter: coverLetter,
       atsScore: aiAnalysis.atsScore,
       aiAnalysis: aiAnalysis,
-      finalScore: aiAnalysis.overallFit, // Initial score based on resume
+      finalScore: aiAnalysis.overallFit,
       status: 'applied'
     });
 
@@ -127,11 +131,21 @@ export async function POST(request, { params }) {
       $inc: { currentApplications: 1 }
     });
 
+    // Send application confirmation email
+    try {
+      await sendApplicationConfirmationEmail({
+        user: user,
+        job: job
+      });
+    } catch (emailError) {
+      console.error('Failed to send confirmation email:', emailError);
+    }
+
     // Check if we've reached target applications and trigger shortlisting
-    const updatedJob = await Job.findById(jobId);
+    const updatedJob = await Job.findById(jobId).populate('hostId');
     if (updatedJob.currentApplications >= updatedJob.targetApplications) {
-      // Trigger shortlisting process
-      await processShortlisting(jobId);
+      // Trigger shortlisting process asynchronously
+      processShortlisting(jobId).catch(console.error);
     }
 
     return NextResponse.json({
@@ -150,44 +164,88 @@ export async function POST(request, { params }) {
   }
 }
 
-// Process shortlisting when target applications reached
+// FIXED: Process shortlisting when target applications reached
 async function processShortlisting(jobId) {
   try {
+    console.log('Starting shortlisting process for job:', jobId);
+    
     const job = await Job.findById(jobId).populate('hostId');
-    if (!job) return;
+    if (!job) {
+      console.error('Job not found for shortlisting:', jobId);
+      return;
+    }
 
-    // Get all applications for this job
+    // Ensure job has interview link
+    if (!job.interviewLink) {
+      console.error('Job missing interview link:', jobId);
+      return;
+    }
+
+    // Get all applications for this job, sorted by final score
     const applications = await Application.find({ jobId })
-      .populate('userId', 'name email')
-      .sort({ finalScore: -1 });
+      .populate('userId', 'name email phone')
+      .sort({ finalScore: -1, atsScore: -1, createdAt: 1 });
+
+    if (applications.length === 0) {
+      console.log('No applications found for job:', jobId);
+      return;
+    }
 
     // Select top candidates for shortlist
     const shortlistedApps = applications.slice(0, job.maxCandidatesShortlist);
     const rejectedApps = applications.slice(job.maxCandidatesShortlist);
 
-    // Update application statuses and rankings
+    console.log(`Shortlisting ${shortlistedApps.length} candidates, rejecting ${rejectedApps.length}`);
+
+    // Update shortlisted applications and send emails
     for (let i = 0; i < shortlistedApps.length; i++) {
       const app = shortlistedApps[i];
+      
+      // Update application status
       app.status = 'shortlisted';
       app.ranking = i + 1;
       await app.save();
 
-      // Send shortlist email
-      await sendShortlistEmail({
-        user: app.userId,
-        job: job,
-        interviewLink: job.interviewLink,
-        ranking: i + 1
-      });
+      // Send shortlist email with interview link
+      try {
+        await sendShortlistEmail({
+          user: app.userId,
+          job: job,
+          interviewLink: job.interviewLink,
+          ranking: i + 1
+        });
+        
+        app.shortlistEmailSent = true;
+        await app.save();
+        
+        console.log(`Shortlist email sent to ${app.userId.email}`);
+      } catch (emailError) {
+        console.error(`Failed to send shortlist email to ${app.userId.email}:`, emailError);
+      }
     }
 
-    // Update rejected applications
+    // Update rejected applications and send emails
     for (const app of rejectedApps) {
       app.status = 'rejected';
       await app.save();
+
+      // Send rejection email
+      try {
+        await sendRejectionEmail({
+          user: app.userId,
+          job: job
+        });
+        
+        app.rejectionEmailSent = true;
+        await app.save();
+        
+        console.log(`Rejection email sent to ${app.userId.email}`);
+      } catch (emailError) {
+        console.error(`Failed to send rejection email to ${app.userId.email}:`, emailError);
+      }
     }
 
-    // Update job with shortlisted candidates
+    // Update job with shortlisted candidates and status
     job.shortlistedCandidates = shortlistedApps.map(app => app._id);
     job.status = 'interviews_active';
     await job.save();
