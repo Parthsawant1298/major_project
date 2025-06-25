@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, Users, Clock, Award, Eye } from 'lucide-react';
-import Navbar from '@/components/HOST/Navbar';
+import Navbar from '@/components/Host/Navbar';
 import Footer from '@/components/Footer';
 
 export default function HostAnalyticsPage() {
