@@ -1,4 +1,4 @@
-// app/api/webhook/vapi/route.js - CORRECTED VERSION
+// FIXED: app/api/webhook/vapi/route.js
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Job, Application } from '@/models/job';
@@ -41,7 +41,7 @@ export async function POST(request) {
   }
 }
 
-// FIXED: Process completed interview with proper error handling
+// FIXED: Process completed interview with proper metadata extraction
 async function processCompletedInterview(call) {
   try {
     if (!call) {
@@ -52,33 +52,49 @@ async function processCompletedInterview(call) {
       id: callId,
       transcript = '',
       duration = 0,
-      metadata = {}
+      metadata = {},
+      // FIXED: Extract from assistant metadata if available
+      assistant = {}
     } = call;
 
     console.log('Processing completed interview:', {
       callId,
       duration,
       metadata,
+      assistantMetadata: assistant.metadata,
       transcriptLength: transcript.length
     });
 
-    // Extract job and user info from metadata or call URL
-    let jobId = metadata.jobId;
-    let userId = metadata.userId;
+    // FIXED: Extract job and user info from multiple sources
+    let jobId = metadata.jobId || assistant.metadata?.jobId;
+    let userId = metadata.userId || assistant.metadata?.userId;
 
-    // If not in metadata, try to extract from call context
+    // If still not found, try to extract from URL pattern in call context
     if (!jobId || !userId) {
-      console.error('Missing jobId or userId in call metadata:', metadata);
+      console.log('Missing metadata, trying to extract from call context...');
       
-      // Try to extract from other call properties if available
-      if (call.assistant && call.assistant.metadata) {
-        jobId = call.assistant.metadata.jobId;
-        userId = call.assistant.metadata.userId;
+      // Try to extract from call.phoneNumber or other call properties
+      if (call.phoneNumber && call.phoneNumber.includes('/interview/')) {
+        const urlMatch = call.phoneNumber.match(/\/interview\/([^\/\?]+)/);
+        if (urlMatch) {
+          jobId = urlMatch[1];
+        }
       }
       
-      if (!jobId || !userId) {
-        throw new Error('Missing required job or user ID in call data');
+      // If we have jobId but no userId, we need to identify the user somehow
+      if (jobId && !userId) {
+        console.error('JobId found but userId missing. Need user identification mechanism.');
+        throw new Error('Cannot identify user for this interview');
       }
+    }
+
+    if (!jobId || !userId) {
+      console.error('Missing required job or user ID in call data:', {
+        metadata,
+        assistantMetadata: assistant.metadata,
+        callId
+      });
+      throw new Error('Missing required job or user ID in call data');
     }
 
     await connectDB();
@@ -152,7 +168,7 @@ async function processCompletedInterview(call) {
       interviewScore: interviewScore
     });
 
-    // OPTIONAL: Send interview completion email
+    // FIXED: Send interview completion email
     try {
       const { sendInterviewCompletionEmail } = await import('@/lib/email-service');
       await sendInterviewCompletionEmail({
