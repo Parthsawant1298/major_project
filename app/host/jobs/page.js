@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, Eye, Users, BarChart3, Calendar } from 'lucide-react';
 import Navbar from '@/components/Host/Navbar';
 import Footer from '@/components/Footer';
+import JobCard from '@/components/JobCard';
 
 export default function HostJobsPage() {
   const router = useRouter();
@@ -89,7 +90,32 @@ export default function HostJobsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {jobs.map((job) => (
-                <JobCard key={job._id} job={job} />
+                <JobCard 
+                  key={job._id} 
+                  job={job} 
+                  isHost={true}
+                  onEdit={(job) => router.push(`/host/jobs/${job._id}/edit`)}
+                  onDelete={async (job) => {
+                    if (window.confirm('Are you sure you want to delete this job?')) {
+                      try {
+                        const response = await fetch(`/api/host/jobs/${job._id}/delete`, {
+                          method: 'DELETE',
+                          credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                          fetchJobs(); // Refresh the list
+                        } else {
+                          const error = await response.json();
+                          alert(error.error || 'Failed to delete job');
+                        }
+                      } catch (error) {
+                        alert('Failed to delete job');
+                      }
+                    }
+                  }}
+                  onViewCandidates={(job) => router.push(`/host/jobs/${job._id}/candidates`)}
+                />
               ))}
             </div>
           )}
@@ -97,66 +123,6 @@ export default function HostJobsPage() {
       </div>
       
       <Footer />
-    </div>
-  );
-}
-
-function JobCard({ job }) {
-  const router = useRouter();
-  
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'draft': return 'bg-gray-100 text-gray-700';
-      case 'published': return 'bg-green-100 text-green-700';
-      case 'applications_open': return 'bg-blue-100 text-blue-700';
-      case 'interviews_active': return 'bg-purple-100 text-purple-700';
-      case 'completed': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      {job.jobImage && (
-        <img src={job.jobImage} alt={job.jobTitle} className="w-full h-32 object-cover rounded-lg mb-4" />
-      )}
-      
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-gray-900">{job.jobTitle}</h3>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
-          {job.status.replace('_', ' ').toUpperCase()}
-        </span>
-      </div>
-
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{job.jobDescription}</p>
-      
-      <div className="grid grid-cols-2 gap-4 mb-4 text-center">
-        <div>
-          <div className="text-2xl font-bold text-gray-900">{job.currentApplications}</div>
-          <div className="text-xs text-gray-600">Applications</div>
-        </div>
-        <div>
-          <div className="text-2xl font-bold text-gray-900">{job.shortlistedCandidates?.length || 0}</div>
-          <div className="text-xs text-gray-600">Shortlisted</div>
-        </div>
-      </div>
-
-      <div className="flex space-x-2">
-        <button
-          onClick={() => router.push(`/host/jobs/${job._id}/candidates`)}
-          className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-200 text-sm font-medium flex items-center justify-center space-x-1"
-        >
-          <Users className="h-4 w-4" />
-          <span>Candidates</span>
-        </button>
-        <button
-          onClick={() => router.push(`/host/jobs/${job._id}/analytics`)}
-          className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center space-x-1"
-        >
-          <BarChart3 className="h-4 w-4" />
-          <span>Analytics</span>
-        </button>
-      </div>
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/middleware/auth';
 import connectDB from '@/lib/mongodb';
 import { Job, Application } from '@/models/job';
+import User from '@/models/user';
+import Host from '@/models/host';
 import { analyzeResume } from '@/lib/ai-services';
 import { sendShortlistEmail, sendRejectionEmail, sendApplicationConfirmationEmail } from '@/lib/email-service';
 import { extractTextFromPDF } from '@/lib/pdf-utils';
@@ -143,7 +145,24 @@ export async function POST(request, { params }) {
 
     // Check if we've reached target applications and trigger shortlisting
     const updatedJob = await Job.findById(jobId).populate('hostId');
+    
+    // Send host notification email for new application
+    try {
+      const { sendHostApplicationNotificationEmail } = await import('@/lib/email-service');
+      await sendHostApplicationNotificationEmail({
+        host: job.hostId,
+        job: updatedJob || job,
+        newApplicationsCount: 1
+      });
+    } catch (emailError) {
+      console.error('Failed to send host notification email:', emailError);
+    }
     if (updatedJob.currentApplications >= updatedJob.targetApplications) {
+      // Update job status to applications_closed
+      await Job.findByIdAndUpdate(jobId, { 
+        status: 'applications_closed' 
+      });
+      
       // Trigger shortlisting process asynchronously
       processShortlisting(jobId).catch(console.error);
     }

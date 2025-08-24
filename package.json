@@ -9,24 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vapi-ai/web": "^2.3.9",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
-    "d3": "^7.9.0",
-    "framer-motion": "^12.19.1",
+    "framer-motion": "^12.23.12",
     "jsonwebtoken": "^9.0.2",
-    "lodash": "^4.17.21",
     "lucide-react": "^0.518.0",
     "mammoth": "^1.9.1",
-    "mathjs": "^14.5.2",
     "mongoose": "^8.16.0",
     "next": "15.3.4",
     "nodemailer": "^7.0.3",
     "openai": "^5.7.0",
-    "papaparse": "^5.5.3",
-    "pdf-parse": "^1.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "streamifier": "^0.1.1"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

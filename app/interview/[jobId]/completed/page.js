@@ -59,77 +59,36 @@ export default function InterviewCompletedPage() {
             Thank you for completing the AI voice interview for {job?.jobTitle} at {job?.hostId.organization}.
           </p>
 
-          {/* Performance Summary */}
-          {application?.voiceInterviewFeedback && (
-            <div className="bg-gray-50 rounded-xl p-6 mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Performance Summary</h2>
-              
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{application.voiceInterviewScore}%</div>
-                  <div className="text-sm text-gray-600">Overall Score</div>
+          {/* Interview Completion Confirmation */}
+          <div className="bg-gray-50 rounded-xl p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Interview Completed Successfully</h2>
+            
+            <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <CheckCircle className="h-5 w-5 text-green-400" />
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{application.finalScore}%</div>
-                  <div className="text-sm text-gray-600">Final Score</div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Communication</span>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{ width: `${application.voiceInterviewFeedback.communicationSkills}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium">{application.voiceInterviewFeedback.communicationSkills}%</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Technical Knowledge</span>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                      <div 
-                        className="bg-green-600 h-2 rounded-full"
-                        style={{ width: `${application.voiceInterviewFeedback.technicalKnowledge}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium">{application.voiceInterviewFeedback.technicalKnowledge}%</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Problem Solving</span>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                      <div 
-                        className="bg-purple-600 h-2 rounded-full"
-                        style={{ width: `${application.voiceInterviewFeedback.problemSolving}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium">{application.voiceInterviewFeedback.problemSolving}%</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Confidence</span>
-                  <div className="flex items-center">
-                    <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
-                      <div 
-                        className="bg-orange-600 h-2 rounded-full"
-                        style={{ width: `${application.voiceInterviewFeedback.confidence}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-sm font-medium">{application.voiceInterviewFeedback.confidence}%</span>
-                  </div>
+                <div className="ml-3">
+                  <p className="text-sm text-green-700">
+                    <strong>Your interview has been completed and recorded successfully.</strong>
+                  </p>
+                  <p className="mt-2 text-sm text-green-600">
+                    Our AI system has analyzed your responses and will provide detailed feedback to the hiring team. You will be notified of the results within 2-3 business days.
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-medium text-blue-900 mb-2">What's Next?</h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Your interview responses are being analyzed by our AI system</li>
+                <li>• Results will be reviewed by the hiring team</li>
+                <li>• You'll receive an email update about your application status</li>
+                <li>• Keep checking your email for further communications</li>
+              </ul>
+            </div>
+          </div>
 
           {/* Next Steps */}
           <div className="bg-blue-50 rounded-xl p-6 mb-8">

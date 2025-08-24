@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Mic, MicOff, Phone, PhoneOff, AlertCircle, CheckCircle } from 'lucide-react';
+import Vapi from '@vapi-ai/web';
 
 export default function VoiceInterviewPage() {
   const router = useRouter();
@@ -18,10 +19,10 @@ export default function VoiceInterviewPage() {
   const [vapiClient, setVapiClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isVapiLoaded, setIsVapiLoaded] = useState(false);
+  const [isVapiReady, setIsVapiReady] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [callId, setCallId] = useState(null);
-  const vapiLoaded = useRef(false);
+  const vapiInitialized = useRef(false);
   const assistantId = searchParams.get('assistant');
 
   useEffect(() => {
@@ -55,23 +56,38 @@ export default function VoiceInterviewPage() {
 
   const fetchJobDetails = async () => {
     try {
-      const response = await fetch(`/api/jobs/${params.jobId}/details`, {
+      const response = await fetch(`/api/jobs/${params.jobId}/details?interview=true`, {
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch job details');
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 403) {
+          const message = errorData.error || 'You are not authorized to access this interview';
+          setError(`Access Denied: ${message}. Please check if you have applied and been shortlisted for this position.`);
+          throw new Error(message);
+        } else if (response.status === 404) {
+          setError('Job not found. This interview session may have expired or been removed.');
+          throw new Error('Job not found');
+        } else {
+          setError(`Failed to load interview details (Error ${response.status}). Please try again.`);
+          throw new Error(`HTTP ${response.status}: ${errorData.error || 'Failed to fetch job details'}`);
+        }
       }
       
       const data = await response.json();
       if (data.success) {
         setJob(data.job);
+        console.log('Job details loaded successfully:', data.job.jobTitle);
       } else {
         throw new Error(data.error || 'Job not found');
       }
     } catch (error) {
       console.error('Failed to fetch job details:', error);
-      setError('Job not found or access denied');
+      if (!error.message.includes('Access Denied') && !error.message.includes('Job not found')) {
+        setError('Failed to load interview details. Please check your internet connection and try again.');
+      }
       throw error;
     }
   };
@@ -99,79 +115,76 @@ export default function VoiceInterviewPage() {
 
   const checkMicrophonePermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Requesting microphone permission...');
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000
+        }
+      });
+      
+      console.log('Microphone permission granted');
       setPermissionGranted(true);
-      // Stop the stream immediately
+      
+      // Test audio levels
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+      
+      console.log('Audio context created successfully');
+      
+      // Stop the stream and audio context after testing
       stream.getTracks().forEach(track => track.stop());
+      await audioContext.close();
+      
     } catch (error) {
-      console.error('Microphone permission denied:', error);
+      console.error('Microphone permission error:', error);
       setPermissionGranted(false);
-      setError('Microphone access is required for the interview');
+      setError(`Microphone access failed: ${error.message}. Please allow microphone access and refresh.`);
     }
   };
 
   const initializeVAPI = async () => {
-    if (vapiLoaded.current) return;
+    if (vapiInitialized.current) return;
     
     try {
       setLoading(true);
       
-      // Check if VAPI is already loaded
-      if (typeof window !== 'undefined' && window.Vapi) {
-        setupVAPI(window.Vapi);
-        return;
-      }
-
-      // Load VAPI SDK
-      await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/@vapi-ai/web@latest/dist/index.js';
-        script.async = true;
-        
-        script.onload = () => {
-          if (window.Vapi) {
-            setIsVapiLoaded(true);
-            setupVAPI(window.Vapi);
-            resolve();
-          } else {
-            reject(new Error('VAPI failed to load'));
-          }
-        };
-        
-        script.onerror = () => {
-          reject(new Error('Failed to load VAPI SDK'));
-        };
-        
-        document.head.appendChild(script);
-        
-        // Cleanup function
-        return () => {
-          if (script.parentNode) {
-            script.parentNode.removeChild(script);
-          }
-        };
-      });
-      
-    } catch (error) {
-      console.error('Failed to initialize VAPI:', error);
-      setError('Failed to load interview system. Please refresh and try again.');
-      setLoading(false);
-    }
-  };
-
-  const setupVAPI = (Vapi) => {
-    if (vapiLoaded.current) return;
-    
-    try {
+      // Get VAPI public key
       const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
       
       if (!publicKey) {
         throw new Error('VAPI public key not configured');
       }
 
+      console.log('Initializing VAPI client...');
+      
+      // Initialize VAPI client directly
       const client = new Vapi(publicKey);
       setVapiClient(client);
-      vapiLoaded.current = true;
+      setIsVapiReady(true);
+      vapiInitialized.current = true;
+      
+      // Setup event listeners
+      setupVAPIEventListeners(client);
+      
+      console.log('VAPI client initialized successfully');
+      setLoading(false);
+      
+    } catch (error) {
+      console.error('Failed to initialize VAPI:', error);
+      setError(`Failed to initialize interview system: ${error.message}`);
+      setLoading(false);
+    }
+  };
+
+  const setupVAPIEventListeners = (client) => {
+    try {
+      console.log('Setting up VAPI event listeners...');
 
       // Setup comprehensive event listeners
       client.on('call-start', () => {
@@ -208,7 +221,25 @@ export default function VoiceInterviewPage() {
 
       client.on('error', (error) => {
         console.error('VAPI error:', error);
-        setError(`Interview error: ${error.message || 'Unknown error'}`);
+        
+        // Handle different types of VAPI errors
+        let errorMessage = 'Interview system error';
+        
+        if (error && typeof error === 'object') {
+          if (error.message) {
+            errorMessage = error.message;
+          } else if (error.type) {
+            errorMessage = `VAPI error: ${error.type}`;
+          } else if (Object.keys(error).length === 0) {
+            errorMessage = 'Interview connection lost. Please try again.';
+          } else {
+            errorMessage = JSON.stringify(error);
+          }
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        setError(`Interview error: ${errorMessage}`);
         setIsCallActive(false);
         setLoading(false);
       });
@@ -217,30 +248,67 @@ export default function VoiceInterviewPage() {
         console.log('VAPI message:', message);
       });
 
-      setLoading(false);
+      // Add additional event listeners for better debugging
+      client.on('call-failed', (error) => {
+        console.error('VAPI call failed:', error);
+        setError('Interview call failed. Please try again.');
+        setIsCallActive(false);
+        setLoading(false);
+      });
+
+      client.on('connection-lost', () => {
+        console.error('VAPI connection lost');
+        setError('Interview connection lost. Please check your internet and try again.');
+        setIsCallActive(false);
+        setLoading(false);
+      });
+
+      // Handle meeting/call ejection
+      client.on('ejected', (reason) => {
+        console.error('Meeting ended due to ejection:', reason);
+        setError(`Meeting has ended`);
+        setIsCallActive(false);
+        setIsCallEnded(true);
+      });
+
+      // Add microphone monitoring
+      client.on('volume-level', (level) => {
+        console.log('Audio level:', level);
+      });
+
+      // Add voice activity detection events
+      client.on('voice-activity-start', () => {
+        console.log('Voice activity started');
+      });
+
+      client.on('voice-activity-end', () => {
+        console.log('Voice activity ended');
+      });
+
+      console.log('VAPI event listeners setup complete');
       
     } catch (error) {
-      console.error('VAPI setup error:', error);
-      setError('Failed to setup interview system');
+      console.error('VAPI event listener setup error:', error);
+      setError('Failed to setup interview event handlers');
       setLoading(false);
     }
   };
 
   const processInterviewCompletion = async (callData) => {
     try {
-      const response = await fetch('/api/webhook/vapi/route', {
+      const response = await fetch('/api/webhook/vapi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
-          type: 'call-ended',
+          type: 'call-end',
           call: {
             ...callData,
             metadata: {
               jobId: params.jobId,
-              userId: user?.id,
+              userId: user?._id,
               assistantId: assistantId
             }
           }
@@ -256,8 +324,13 @@ export default function VoiceInterviewPage() {
   };
 
   const startInterview = async () => {
-    if (!vapiClient || !assistantId) {
+    if (!vapiClient) {
       setError('Interview system not ready. Please refresh and try again.');
+      return;
+    }
+
+    if (!assistantId) {
+      setError('Invalid interview link. Assistant ID is missing.');
       return;
     }
 
@@ -270,19 +343,46 @@ export default function VoiceInterviewPage() {
       setLoading(true);
       setError(null);
       
-      // Start the call with the assistant
+      console.log('Starting interview with assistant:', assistantId);
+      
+      // Start session tracking
+      await fetch('/api/interview/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          jobId: params.jobId,
+          assistantId: assistantId,
+          action: 'start'
+        })
+      });
+      
+      // Start the call with the assistant and proper configuration
       await vapiClient.start(assistantId, {
         metadata: {
           jobId: params.jobId,
-          userId: user?.id,
-          userName: user?.name,
-          jobTitle: job?.jobTitle
-        }
+          userId: user?._id,
+          userName: user?.name || 'Candidate',
+          jobTitle: job?.jobTitle || 'Position',
+          platform: 'hireai'
+        },
+        // Add additional VAPI configuration
+        maxDurationSeconds: (job?.voiceInterviewDuration || 15) * 60 + 120
       });
+      
+      console.log('VAPI call started successfully');
       
     } catch (error) {
       console.error('Failed to start interview:', error);
-      setError('Failed to start interview. Please check your microphone and try again.');
+      
+      let errorMsg = 'Failed to start interview';
+      if (error.message) {
+        errorMsg += `: ${error.message}`;
+      } else if (typeof error === 'string') {
+        errorMsg += `: ${error}`;
+      }
+      
+      setError(`${errorMsg}. Please check your microphone and try again.`);
       setLoading(false);
     }
   };
@@ -337,10 +437,25 @@ export default function VoiceInterviewPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="max-w-md mx-auto text-center bg-white rounded-lg shadow-lg p-8">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Interview System Error</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {error?.includes('Access Denied') ? 'Interview Access Restricted' : 'Interview System Error'}
+          </h2>
           <p className="text-gray-600 mb-6">{error}</p>
+          
+          {error?.includes('Access Denied') && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
+              <h3 className="font-medium text-blue-900 mb-2">To access this interview:</h3>
+              <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                <li>Apply to the job position</li>
+                <li>Wait for your resume to be reviewed</li>
+                <li>Get shortlisted by the employer</li>
+                <li>Receive the interview invitation link</li>
+              </ol>
+            </div>
+          )}
+          
           <div className="space-y-3">
-            {!permissionGranted && (
+            {!permissionGranted && !error?.includes('Access Denied') && (
               <button
                 onClick={requestMicrophonePermission}
                 className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
@@ -348,12 +463,23 @@ export default function VoiceInterviewPage() {
                 Grant Microphone Permission
               </button>
             )}
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 font-medium"
-            >
-              Refresh Page
-            </button>
+            
+            {error?.includes('Access Denied') ? (
+              <button 
+                onClick={() => router.push('/jobs')}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium"
+              >
+                Browse Available Jobs
+              </button>
+            ) : (
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 font-medium"
+              >
+                Refresh Page
+              </button>
+            )}
+            
             <button 
               onClick={() => router.push('/jobs')}
               className="w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-medium"
@@ -527,9 +653,9 @@ export default function VoiceInterviewPage() {
                 </div>
                 <div className="flex items-center">
                   <div className={`w-2 h-2 rounded-full mr-2 ${
-                    isVapiLoaded ? 'bg-green-500' : 'bg-yellow-500'
+                    isVapiReady ? 'bg-green-500' : 'bg-yellow-500'
                   }`}></div>
-                  Interview System: {isVapiLoaded ? 'Ready' : 'Loading...'}
+                  Interview System: {isVapiReady ? 'Ready' : 'Loading...'}
                 </div>
                 <div className="flex items-center">
                   <div className={`w-2 h-2 rounded-full mr-2 ${

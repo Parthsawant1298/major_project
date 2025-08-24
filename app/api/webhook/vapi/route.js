@@ -69,22 +69,52 @@ async function processCompletedInterview(call) {
     let jobId = metadata.jobId || assistant.metadata?.jobId;
     let userId = metadata.userId || assistant.metadata?.userId;
 
-    // If still not found, try to extract from URL pattern in call context
+    // If still not found, try to extract from assistantId or other call properties
     if (!jobId || !userId) {
       console.log('Missing metadata, trying to extract from call context...');
       
-      // Try to extract from call.phoneNumber or other call properties
-      if (call.phoneNumber && call.phoneNumber.includes('/interview/')) {
-        const urlMatch = call.phoneNumber.match(/\/interview\/([^\/\?]+)/);
-        if (urlMatch) {
-          jobId = urlMatch[1];
+      // Try to find session by assistantId
+      if (call.assistantId) {
+        try {
+          const sessionResponse = await fetch(`${process.env.APP_URL || 'http://localhost:3000'}/api/interview/session?assistantId=${call.assistantId}`);
+          if (sessionResponse.ok) {
+            const sessionData = await sessionResponse.json();
+            if (sessionData.success) {
+              jobId = sessionData.session.jobId;
+              userId = sessionData.session.userId;
+              console.log('Found session data:', { jobId, userId });
+            }
+          }
+        } catch (sessionError) {
+          console.error('Failed to get session data:', sessionError);
+        }
+
+        // Fallback: Try to find job by assistantId if session lookup failed
+        if (!jobId) {
+          const jobByAssistant = await Job.findOne({ 
+            vapiAssistantId: call.assistantId 
+          });
+          
+          if (jobByAssistant) {
+            jobId = jobByAssistant._id.toString();
+            console.log('Found jobId from assistantId:', jobId);
+          }
         }
       }
       
-      // If we have jobId but no userId, we need to identify the user somehow
+      // If we have jobId but no userId, find the most recent shortlisted user
+      // This is not ideal but works as a fallback
       if (jobId && !userId) {
-        console.error('JobId found but userId missing. Need user identification mechanism.');
-        throw new Error('Cannot identify user for this interview');
+        const recentApplication = await Application.findOne({
+          jobId: jobId,
+          status: 'shortlisted',
+          voiceInterviewCompleted: false
+        }).sort({ createdAt: -1 });
+        
+        if (recentApplication) {
+          userId = recentApplication.userId.toString();
+          console.log('Found userId from recent application:', userId);
+        }
       }
     }
 

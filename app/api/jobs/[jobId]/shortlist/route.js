@@ -6,6 +6,7 @@ import { Job, Application } from '@/models/job';
 
 export async function GET(request, { params }) {
   try {
+    // This route should be accessible to hosts only
     const authResult = await requireHostAuth(request);
     if (authResult instanceof NextResponse) {
       return authResult;

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search, Filter, MapPin, Clock, Users, Briefcase, Loader2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import JobCard from '@/components/JobCard';
 
 export default function JobsListingPage() {
   const router = useRouter();
@@ -145,59 +146,3 @@ export default function JobsListingPage() {
   );
 }
 
-function JobCard({ job }) {
-  const router = useRouter();
-  
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-         onClick={() => router.push(`/jobs/${job._id}`)}>
-      {job.jobImage && (
-        <img src={job.jobImage} alt={job.jobTitle} className="w-full h-32 object-cover rounded-lg mb-4" />
-      )}
-      
-      <div className="flex items-center space-x-2 mb-3">
-        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-          {job.hostId.profilePicture ? (
-            <img src={job.hostId.profilePicture} alt={job.hostId.name} className="w-full h-full rounded-lg object-cover" />
-          ) : (
-            <Briefcase className="h-6 w-6 text-gray-400" />
-          )}
-        </div>
-        <div>
-          <h3 className="font-semibold text-gray-900">{job.jobTitle}</h3>
-          <p className="text-sm text-gray-600">{job.hostId.organization}</p>
-        </div>
-      </div>
-
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{job.jobDescription}</p>
-      
-      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-        <span className={`px-2 py-1 rounded-full text-xs ${job.jobType === 'job' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-          {job.jobType === 'job' ? 'Full-time' : 'Internship'}
-        </span>
-        <span className="flex items-center">
-          <Clock className="h-4 w-4 mr-1" />
-          {job.voiceInterviewDuration}min interview
-        </span>
-      </div>
-
-      {/* Application Progress */}
-      <div className="mb-4">
-        <div className="flex justify-between text-xs text-gray-600 mb-1">
-          <span>Applications</span>
-          <span>{job.applicationProgress.current}/{job.applicationProgress.target}</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div 
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${Math.min(job.applicationProgress.percentage, 100)}%` }}
-          ></div>
-        </div>
-      </div>
-
-      <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
-        Apply Now
-      </button>
-    </div>
-  );
-}

@@ -86,7 +86,7 @@ export default function JobDetailsPage() {
       const data = await response.json();
 
       if (data.success) {
-        alert(`Application submitted successfully! Your ATS Score: ${data.atsScore}%`);
+        alert('Application submitted successfully! You will be notified about the next steps via email.');
         fetchJobDetails(); // Refresh to show application status
         setShowApplicationForm(false);
       } else {
@@ -182,11 +182,9 @@ export default function JobDetailsPage() {
                       {userApplication.status === 'selected' && 'Selected'}
                       {userApplication.status === 'rejected' && 'Not Selected'}
                     </div>
-                    {userApplication.atsScore && (
-                      <p className="text-xs text-gray-600 mt-1">
-                        ATS Score: {userApplication.atsScore}%
-                      </p>
-                    )}
+                    <p className="text-xs text-gray-600 mt-1">
+                      Applied on {new Date(userApplication.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
                 ) : job.applicationProgress.isFull ? (
                   <button disabled className="px-6 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed">

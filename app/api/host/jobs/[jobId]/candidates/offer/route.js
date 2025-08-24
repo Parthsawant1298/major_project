@@ -20,10 +20,19 @@ export async function POST(request, { params }) {
 
     await connectDB();
 
+    // Verify job ownership first
+    const job = await Job.findOne({ _id: jobId, hostId: host._id }).populate('hostId');
+    if (!job) {
+      return NextResponse.json(
+        { error: 'Job not found or access denied' },
+        { status: 404 }
+      );
+    }
+
     const applications = await Application.find({
       _id: { $in: candidateIds },
       jobId: jobId
-    }).populate('userId jobId');
+    }).populate('userId');
 
     const results = [];
 
@@ -31,7 +40,7 @@ export async function POST(request, { params }) {
       try {
         await sendOfferEmail({
           user: application.userId,
-          job: application.jobId,
+          job: job,
           offerDetails
         });
 
