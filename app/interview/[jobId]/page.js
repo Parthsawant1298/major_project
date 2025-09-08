@@ -23,7 +23,9 @@ export default function VoiceInterviewPage() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [callId, setCallId] = useState(null);
   const vapiInitialized = useRef(false);
-  const assistantId = searchParams.get('assistant');
+  // Get assistant ID from URL params or job data
+  const urlAssistantId = searchParams.get('assistant');
+  const [finalAssistantId, setFinalAssistantId] = useState(null);
 
   useEffect(() => {
     initializeData();
@@ -220,24 +222,47 @@ export default function VoiceInterviewPage() {
       });
 
       client.on('error', (error) => {
-        console.error('VAPI error:', error);
+        console.error('🔥 VAPI ERROR CAUGHT:', error);
+        console.error('🔥 VAPI error details:', {
+          error,
+          errorType: typeof error,
+          errorKeys: error ? Object.keys(error) : null,
+          errorString: JSON.stringify(error),
+          errorConstructor: error?.constructor?.name,
+          errorPrototype: Object.getPrototypeOf(error),
+          timestamp: new Date().toISOString()
+        });
         
-        // Handle different types of VAPI errors
+        // Try to extract meaningful error info
         let errorMessage = 'Interview system error';
+        let debugInfo = '';
         
         if (error && typeof error === 'object') {
+          debugInfo = `Raw error: ${JSON.stringify(error, null, 2)}`;
+          
           if (error.message) {
             errorMessage = error.message;
           } else if (error.type) {
-            errorMessage = `VAPI error: ${error.type}`;
+            errorMessage = `VAPI error type: ${error.type}`;
+          } else if (error.error) {
+            errorMessage = `VAPI error: ${JSON.stringify(error.error)}`;
+          } else if (error.status === 403 || error.statusCode === 403) {
+            errorMessage = 'Authentication failed. Your API key may be invalid.';
+          } else if (error.status === 404 || error.statusCode === 404) {
+            errorMessage = 'Assistant not found. The interview assistant may not exist.';
           } else if (Object.keys(error).length === 0) {
-            errorMessage = 'Interview connection lost. Please try again.';
+            errorMessage = '⚠️ Empty VAPI error - This usually means a network or initialization issue. Check your internet connection and VAPI keys.';
           } else {
-            errorMessage = JSON.stringify(error);
+            errorMessage = `Unhandled error: ${JSON.stringify(error)}`;
           }
         } else if (typeof error === 'string') {
           errorMessage = error;
+        } else {
+          errorMessage = `Unknown error type: ${typeof error}`;
         }
+        
+        console.error('🎯 Final error message:', errorMessage);
+        console.error('🔍 Debug info:', debugInfo);
         
         setError(`Interview error: ${errorMessage}`);
         setIsCallActive(false);
@@ -309,7 +334,7 @@ export default function VoiceInterviewPage() {
             metadata: {
               jobId: params.jobId,
               userId: user?._id,
-              assistantId: assistantId
+              assistantId: finalAssistantId || urlAssistantId || 'unknown'
             }
           }
         })
@@ -329,7 +354,7 @@ export default function VoiceInterviewPage() {
       return;
     }
 
-    if (!assistantId) {
+    if (!finalAssistantId && !urlAssistantId && !job?.vapiAssistantId) {
       setError('Invalid interview link. Assistant ID is missing.');
       return;
     }
@@ -343,7 +368,7 @@ export default function VoiceInterviewPage() {
       setLoading(true);
       setError(null);
       
-      console.log('Starting interview with assistant:', assistantId);
+      console.log('Starting interview process...');
       
       // Start session tracking
       await fetch('/api/interview/session', {
@@ -352,31 +377,115 @@ export default function VoiceInterviewPage() {
         credentials: 'include',
         body: JSON.stringify({
           jobId: params.jobId,
-          assistantId: assistantId,
+          assistantId: finalAssistantId || urlAssistantId || 'creating',
           action: 'start'
         })
       });
       
       // Start the call with the assistant and proper configuration
-      await vapiClient.start(assistantId, {
-        metadata: {
-          jobId: params.jobId,
-          userId: user?._id,
-          userName: user?.name || 'Candidate',
-          jobTitle: job?.jobTitle || 'Position',
-          platform: 'hireai'
-        },
-        // Add additional VAPI configuration
-        maxDurationSeconds: (job?.voiceInterviewDuration || 15) * 60 + 120
-      });
+      console.log('Interview session started, preparing VAPI call...');
+
+      try {
+        // Determine which assistant to use
+        let assistantToUse = finalAssistantId || urlAssistantId || job?.vapiAssistantId;
+        
+        console.log('🔍 Debug - Assistant selection:', {
+          finalAssistantId,
+          urlAssistantId,
+          jobVapiAssistantId: job?.vapiAssistantId,
+          assistantToUse
+        });
+        
+        // Always create a fresh interview assistant to ensure compatibility
+        console.log('🏗️ Creating fresh interview assistant for job:', params.jobId, 'Previous ID:', assistantToUse);
+        
+        const assistantResponse = await fetch('/api/interview/create-assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId: params.jobId })
+        });
+        
+        console.log('📡 Assistant creation response status:', assistantResponse.status);
+        const assistantResult = await assistantResponse.json();
+        console.log('📄 Assistant creation result:', assistantResult);
+        
+        if (assistantResult.success) {
+          assistantToUse = assistantResult.assistantId;
+          setFinalAssistantId(assistantToUse);
+          console.log('✅ Interview assistant created:', assistantToUse);
+        } else {
+          throw new Error(`Failed to create assistant: ${assistantResult.error}`);
+        }
+        
+        // Pre-flight checks
+        console.log('🔍 Pre-flight checks...');
+        console.log('🔧 VAPI client ready:', !!vapiClient);
+        console.log('🔑 Public key available:', !!process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY);
+        console.log('🎯 Assistant ID:', assistantToUse);
+        
+        if (!vapiClient) {
+          throw new Error('VAPI client not initialized');
+        }
+        
+        if (!assistantToUse) {
+          throw new Error('No assistant ID available');
+        }
+        
+        const callConfig = {
+          metadata: {
+            jobId: params.jobId,
+            userId: user?._id,
+            userName: user?.name || 'Candidate',
+            jobTitle: job?.jobTitle || 'Position',
+            platform: 'hireai'
+          },
+          maxDurationSeconds: (job?.voiceInterviewDuration || 15) * 60 + 120
+        };
+        
+        console.log('🎯 Call configuration:', callConfig);
+        console.log('🚀 Starting VAPI call with assistant:', assistantToUse);
+        
+        // Start the VAPI call
+        const startPromise = vapiClient.start(assistantToUse, callConfig);
+        console.log('📡 VAPI start method called, waiting for response...');
+        
+        await startPromise;
+        
+        console.log('✅ VAPI interview started successfully');
+        
+      } catch (error) {
+        console.error('❌ Interview start failed:', error);
+        console.error('❌ Error details:', {
+          name: error?.name,
+          message: error?.message,
+          stack: error?.stack,
+          cause: error?.cause
+        });
+        throw error;
+      }
       
       console.log('VAPI call started successfully');
       
     } catch (error) {
       console.error('Failed to start interview:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        status: error.status,
+        statusCode: error.statusCode
+      });
       
       let errorMsg = 'Failed to start interview';
-      if (error.message) {
+      
+      // Handle specific VAPI errors
+      if (error.message && error.message.includes('403')) {
+        errorMsg = '❌ VAPI Key Permission Error: Your public key does not have web call permissions. Please check your VAPI dashboard settings.';
+      } else if (error.message && error.message.includes('404')) {
+        errorMsg = '❌ Interview assistant not found. The assistant ID may belong to a different VAPI organization. Please create a new interview assistant.';
+      } else if (error.message && error.message.includes('network')) {
+        errorMsg = 'Network connection failed. Please check your internet and try again.';
+      } else if (error.message) {
         errorMsg += `: ${error.message}`;
       } else if (typeof error === 'string') {
         errorMsg += `: ${error}`;
@@ -384,6 +493,12 @@ export default function VoiceInterviewPage() {
       
       setError(`${errorMsg}. Please check your microphone and try again.`);
       setLoading(false);
+      
+      // Also try to reinitialize VAPI client as a fallback
+      setTimeout(() => {
+        console.log('Attempting to reinitialize VAPI client...');
+        initializeVAPI();
+      }, 2000);
     }
   };
 
@@ -559,12 +674,12 @@ export default function VoiceInterviewPage() {
                 </p>
                 <button
                   onClick={startInterview}
-                  disabled={loading || !assistantId}
+                  disabled={loading || (!finalAssistantId && !urlAssistantId && !job?.vapiAssistantId)}
                   className="bg-blue-600 text-white px-8 py-3 rounded-full hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Starting...' : 'Start Interview'}
                 </button>
-                {!assistantId && (
+                {!finalAssistantId && !urlAssistantId && !job?.vapiAssistantId && (
                   <p className="text-red-600 text-sm mt-2">
                     Invalid interview link. Please check the URL.
                   </p>

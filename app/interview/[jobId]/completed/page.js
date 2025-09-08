@@ -59,36 +59,148 @@ export default function InterviewCompletedPage() {
             Thank you for completing the AI voice interview for {job?.jobTitle} at {job?.hostId.organization}.
           </p>
 
-          {/* Interview Completion Confirmation */}
-          <div className="bg-gray-50 rounded-xl p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Interview Completed Successfully</h2>
-            
-            <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <CheckCircle className="h-5 w-5 text-green-400" />
+          {/* Interview Results */}
+          {application?.voiceInterviewCompleted ? (
+            <div className="bg-gray-50 rounded-xl p-6 mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Interview Results</h2>
+              
+              {/* Performance Summary */}
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-900 mb-2">Overall Performance</h3>
+                  <div className="text-2xl font-bold text-blue-600 mb-2">
+                    {application.voiceInterviewScore || 0}/100
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full" 
+                      style={{ width: `${application.voiceInterviewScore || 0}%` }}
+                    ></div>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-green-700">
-                    <strong>Your interview has been completed and recorded successfully.</strong>
-                  </p>
-                  <p className="mt-2 text-sm text-green-600">
-                    Our AI system has analyzed your responses and will provide detailed feedback to the hiring team. You will be notified of the results within 2-3 business days.
-                  </p>
+                
+                <div className="bg-white p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-900 mb-2">Final Score</h3>
+                  <div className="text-2xl font-bold text-green-600 mb-2">
+                    {application.finalScore || 0}/100
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Resume ({application.atsScore || 0}) + Interview ({application.voiceInterviewScore || 0})
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">What's Next?</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Your interview responses are being analyzed by our AI system</li>
-                <li>• Results will be reviewed by the hiring team</li>
-                <li>• You'll receive an email update about your application status</li>
-                <li>• Keep checking your email for further communications</li>
-              </ul>
+              {/* Detailed Feedback */}
+              {application.voiceInterviewFeedback && (
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-900">Performance Breakdown</h3>
+                  
+                  {/* Skills Breakdown */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {application.voiceInterviewFeedback.communicationSkills && (
+                      <div className="bg-white p-3 rounded">
+                        <div className="text-sm text-gray-600">Communication</div>
+                        <div className="text-lg font-semibold">{application.voiceInterviewFeedback.communicationSkills}/100</div>
+                      </div>
+                    )}
+                    {application.voiceInterviewFeedback.technicalKnowledge && (
+                      <div className="bg-white p-3 rounded">
+                        <div className="text-sm text-gray-600">Technical Knowledge</div>
+                        <div className="text-lg font-semibold">{application.voiceInterviewFeedback.technicalKnowledge}/100</div>
+                      </div>
+                    )}
+                    {application.voiceInterviewFeedback.problemSolving && (
+                      <div className="bg-white p-3 rounded">
+                        <div className="text-sm text-gray-600">Problem Solving</div>
+                        <div className="text-lg font-semibold">{application.voiceInterviewFeedback.problemSolving}/100</div>
+                      </div>
+                    )}
+                    {application.voiceInterviewFeedback.confidence && (
+                      <div className="bg-white p-3 rounded">
+                        <div className="text-sm text-gray-600">Confidence</div>
+                        <div className="text-lg font-semibold">{application.voiceInterviewFeedback.confidence}/100</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Interview Stats */}
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">Interview Statistics</h4>
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="text-blue-600">Duration</div>
+                        <div className="font-semibold">
+                          {Math.floor((application.voiceInterviewFeedback.interviewDuration || 0) / 60)}m {((application.voiceInterviewFeedback.interviewDuration || 0) % 60)}s
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-blue-600">Questions Answered</div>
+                        <div className="font-semibold">
+                          {application.voiceInterviewFeedback.answeredQuestions || 0}/{application.voiceInterviewFeedback.totalQuestions || 0}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-blue-600">Completion Rate</div>
+                        <div className="font-semibold">
+                          {Math.round(((application.voiceInterviewFeedback.answeredQuestions || 0) / (application.voiceInterviewFeedback.totalQuestions || 1)) * 100)}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detailed Feedback */}
+                  {application.voiceInterviewFeedback.detailedFeedback && (
+                    <div className="bg-white p-4 rounded-lg border">
+                      <h4 className="font-medium text-gray-900 mb-2">AI Feedback</h4>
+                      <p className="text-gray-700 text-sm leading-relaxed">
+                        {application.voiceInterviewFeedback.detailedFeedback}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-6 p-4 bg-green-50 rounded-lg">
+                <h3 className="font-medium text-green-900 mb-2">What's Next?</h3>
+                <ul className="text-sm text-green-800 space-y-1">
+                  <li>• Your results have been shared with the hiring team</li>
+                  <li>• You'll receive an email update about your application status</li>
+                  <li>• Keep checking your email for further communications</li>
+                </ul>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl p-6 mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Interview Completed Successfully</h2>
+              
+              <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-green-700">
+                      <strong>Your interview has been completed and recorded successfully.</strong>
+                    </p>
+                    <p className="mt-2 text-sm text-green-600">
+                      Our AI system is analyzing your responses. Results will be available shortly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-medium text-blue-900 mb-2">Processing Interview...</h3>
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="text-sm text-blue-800">Analyzing your responses...</span>
+                </div>
+                <p className="text-sm text-blue-700 mt-2">
+                  Please refresh this page in a few minutes to see your results.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Next Steps */}
           <div className="bg-blue-50 rounded-xl p-6 mb-8">

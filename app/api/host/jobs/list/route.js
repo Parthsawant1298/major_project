@@ -18,11 +18,15 @@ export async function GET(request) {
 
     await connectDB();
 
-    // Build query
+    // Build query - exclude cancelled jobs by default unless specifically requested
     const query = { hostId: host._id };
-    if (status) {
+    if (status && status !== 'all') {
       query.status = status;
+    } else if (!status) {
+      // By default, don't show cancelled jobs
+      query.status = { $ne: 'cancelled' };
     }
+    // If status === 'all', don't add any status filter
 
     // Get jobs with pagination
     const jobs = await Job.find(query)

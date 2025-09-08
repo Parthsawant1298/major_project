@@ -14,9 +14,9 @@ export async function GET(request) {
     const jobType = searchParams.get('jobType');
     const search = searchParams.get('search');
 
-    // Build query
+    // Build query - include more statuses for user visibility
     const query = { 
-      status: { $in: ['published', 'applications_open'] },
+      status: { $in: ['published', 'applications_open', 'interviews_active'] },
       applicationDeadline: { $gte: new Date() }
     };
 
@@ -68,7 +68,11 @@ export async function GET(request) {
   } catch (error) {
     console.error('List jobs error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch jobs' },
+      { 
+        success: false,
+        error: 'Failed to fetch jobs',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

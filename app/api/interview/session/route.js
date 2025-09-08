@@ -6,6 +6,9 @@ import { requireAuth } from '@/middleware/auth';
 // In-memory session store (in production, use Redis or database)
 const activeSessions = new Map();
 
+// Also create a mapping for assistant IDs to sessions for webhook lookups
+const assistantSessionMap = new Map();
+
 export async function POST(request) {
   try {
     const authResult = await requireAuth(request);
@@ -22,13 +25,20 @@ export async function POST(request) {
 
     if (action === 'start') {
       // Store session info
-      activeSessions.set(sessionKey, {
+      const sessionData = {
         jobId,
         userId: user._id.toString(),
         assistantId,
         startTime: new Date(),
         status: 'active'
-      });
+      };
+      
+      activeSessions.set(sessionKey, sessionData);
+      
+      // Also map assistantId to session for webhook lookups
+      if (assistantId) {
+        assistantSessionMap.set(assistantId, sessionData);
+      }
 
       console.log('Interview session started:', sessionKey);
 
@@ -73,12 +83,18 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Assistant ID required' }, { status: 400 });
     }
 
-    // Find session by assistantId
-    let foundSession = null;
-    for (const [sessionKey, session] of activeSessions.entries()) {
-      if (session.assistantId === assistantId && session.status === 'active') {
-        foundSession = session;
-        break;
+    // Find session by assistantId - check both maps
+    let foundSession = assistantSessionMap.get(assistantId);
+    
+    // Fallback to searching active sessions
+    if (!foundSession) {
+      for (const [sessionKey, session] of activeSessions.entries()) {
+        if (session.assistantId === assistantId) {
+          foundSession = session;
+          // Update the assistant map for future lookups
+          assistantSessionMap.set(assistantId, session);
+          break;
+        }
       }
     }
 

@@ -27,7 +27,7 @@ export async function GET(request, { params }) {
       // Get job with VAPI details for interviews
       const job = await Job.findById(jobId)
         .populate('hostId', 'name email organization designation')
-        .select('jobTitle jobDescription voiceInterviewDuration vapiAssistantId interviewLink hostId status');
+        .select('jobTitle jobDescription voiceInterviewDuration vapiAssistantId interviewLink hostId status interviewQuestions');
 
       if (!job) {
         return NextResponse.json(

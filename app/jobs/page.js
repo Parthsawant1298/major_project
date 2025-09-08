@@ -15,6 +15,7 @@ export default function JobsListingPage() {
   const [jobTypeFilter, setJobTypeFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchJobs();
@@ -22,6 +23,7 @@ export default function JobsListingPage() {
 
   const fetchJobs = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -31,18 +33,34 @@ export default function JobsListingPage() {
       if (jobTypeFilter) params.append('jobType', jobTypeFilter);
       if (searchTerm) params.append('search', searchTerm);
 
+      console.log('Fetching jobs with params:', params.toString());
+
       const response = await fetch(`/api/jobs/list?${params}`, {
         credentials: 'include'
       });
       
       const data = await response.json();
+      console.log('Jobs API response:', data);
+      
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
       
       if (data.success) {
-        setJobs(data.jobs);
-        setPagination(data.pagination);
+        setJobs(data.jobs || []);
+        setPagination(data.pagination || {});
+        
+        if (data.jobs?.length === 0 && currentPage === 1) {
+          setError('No jobs available at the moment. Please check back later.');
+        }
+      } else {
+        throw new Error(data.error || 'Failed to fetch jobs');
       }
     } catch (error) {
       console.error('Failed to fetch jobs:', error);
+      setError(error.message || 'Failed to fetch jobs. Please try again.');
+      setJobs([]);
+      setPagination({});
     } finally {
       setLoading(false);
     }
@@ -101,6 +119,42 @@ export default function JobsListingPage() {
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+                <h3 className="text-lg font-medium text-red-800 mb-2">Error Loading Jobs</h3>
+                <p className="text-red-600 mb-4">{error}</p>
+                <button
+                  onClick={fetchJobs}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
+                <h3 className="text-lg font-medium text-gray-800 mb-2">No Jobs Found</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchTerm || jobTypeFilter 
+                    ? "Try adjusting your search criteria or filters." 
+                    : "No jobs are currently available. Please check back later."}
+                </p>
+                {(searchTerm || jobTypeFilter) && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setJobTypeFilter('');
+                      setCurrentPage(1);
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <>

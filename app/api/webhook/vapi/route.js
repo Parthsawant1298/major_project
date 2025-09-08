@@ -69,6 +69,14 @@ async function processCompletedInterview(call) {
     let jobId = metadata.jobId || assistant.metadata?.jobId;
     let userId = metadata.userId || assistant.metadata?.userId;
 
+    // Also check call metadata and phoneNumber metadata
+    if (!jobId) {
+      jobId = call.metadata?.jobId || call.phoneNumber?.metadata?.jobId;
+    }
+    if (!userId) {
+      userId = call.metadata?.userId || call.phoneNumber?.metadata?.userId;
+    }
+
     // If still not found, try to extract from assistantId or other call properties
     if (!jobId || !userId) {
       console.log('Missing metadata, trying to extract from call context...');

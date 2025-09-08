@@ -72,12 +72,14 @@ export default function HostJobsPage() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">All Jobs</option>
+                <option value="">Active Jobs</option>
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
                 <option value="applications_open">Applications Open</option>
                 <option value="interviews_active">Interviews Active</option>
                 <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="all">All Jobs (including cancelled)</option>
               </select>
             </div>
           </div>
@@ -96,21 +98,32 @@ export default function HostJobsPage() {
                   isHost={true}
                   onEdit={(job) => router.push(`/host/jobs/${job._id}/edit`)}
                   onDelete={async (job) => {
-                    if (window.confirm('Are you sure you want to delete this job?')) {
+                    const message = job.currentApplications > 0 
+                      ? `This job has ${job.currentApplications} applications. Are you sure you want to cancel it? (This action cannot be undone)`
+                      : 'Are you sure you want to delete this job? (This action cannot be undone)';
+                    
+                    if (window.confirm(message)) {
                       try {
                         const response = await fetch(`/api/host/jobs/${job._id}/delete`, {
                           method: 'DELETE',
                           credentials: 'include'
                         });
                         
+                        const result = await response.json();
+                        
                         if (response.ok) {
+                          if (result.action === 'cancelled') {
+                            alert('Job has been cancelled successfully. Candidates have been notified.');
+                          } else {
+                            alert('Job has been deleted successfully.');
+                          }
                           fetchJobs(); // Refresh the list
                         } else {
-                          const error = await response.json();
-                          alert(error.error || 'Failed to delete job');
+                          alert(result.error || 'Failed to delete job');
                         }
                       } catch (error) {
                         alert('Failed to delete job');
+                        console.error('Delete error:', error);
                       }
                     }
                   }}
