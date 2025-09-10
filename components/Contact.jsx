@@ -31,7 +31,7 @@ export default function ContactPage() {
       {/* Hero Section */}
       <section className="relative h-[450px] md:h-[350px] lg:h-[625px] overflow-hidden">
         <div className="absolute inset-0 z-0 overflow-hidden">
-          <img src="/background.jpg" alt="Background" className="w-full h-full object-cover" />
+          <img src="/background.jpg" alt="Modern office contact background" className="w-full h-full object-cover" />
           <div className="absolute inset-0" />
         </div>
 

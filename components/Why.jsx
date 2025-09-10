@@ -27,7 +27,7 @@ export default function WhyChooseUs() {
             {/* Top Left Rectangle */}
             <div className="flex-1 min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-0 border border-gray-300 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden group">
               <img
-                src="/content-1.gif"
+                src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&h=400&q=80"
                 alt="AI-Powered Recruitment Dashboard"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -38,7 +38,7 @@ export default function WhyChooseUs() {
               {/* Bottom Left Rectangle */}
               <div className="min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-0 border border-gray-300 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden group">
                 <img
-                  src="/content-2.gif"
+                  src="https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&w=600&h=400&q=80"
                   alt="VR Interview Simulation"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -47,7 +47,7 @@ export default function WhyChooseUs() {
               {/* Bottom Right Rectangle */}
               <div className="min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-0 border border-gray-300 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden group">
                 <img
-                  src="/content-3.gif"
+                  src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=600&h=400&q=80"
                   alt="Global Job Discovery Map"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -58,7 +58,7 @@ export default function WhyChooseUs() {
           {/* Right Column */}
           <div className="lg:col-span-1 min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-0 border border-gray-300 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden group">
             <img
-              src="/content-4.gif"
+              src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=600&h=400&q=80"
               alt="AI Learning Assistant Interface"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />

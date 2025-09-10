@@ -23,10 +23,10 @@ export default function RecruitmentServices() {
           <div className="relative order-2 lg:order-1">
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <Image
-                src="/content.gif"
+                src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=600&h=450&q=80"
                 alt="AI-powered recruitment dashboard showing candidate matching analytics"
                 width={600}
-                height={100}
+                height={450}
                 className="w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px] object-cover"
               />
             </div>

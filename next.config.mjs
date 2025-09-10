@@ -11,7 +11,7 @@ const nextConfig = {
   
   // Image optimization settings
   images: {
-    domains: ['res.cloudinary.com', 'cloudinary.com'],
+    domains: ['res.cloudinary.com', 'cloudinary.com', 'images.unsplash.com'],
     formats: ['image/webp', 'image/avif'],
   },
   

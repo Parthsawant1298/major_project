@@ -14,7 +14,7 @@ export default function LowerFooter() {
       <div 
         className="absolute inset-0 bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/background1.jpg')",
+          backgroundImage: "url('/background.jpg')",
           backgroundSize: "100% 100%",
           height: "100vh",
           width: "100%",

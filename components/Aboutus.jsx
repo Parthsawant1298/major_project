@@ -19,7 +19,7 @@ export default function HomePage() {
       {/* Hero Section */}
 <section className="relative h-[470px] md:h-[350px] lg:h-[625px] overflow-hidden">
   <div className="absolute inset-0 z-0 overflow-hidden">
-    <img src="/background.jpg" alt="Background" className="w-full h-full object-cover" />
+    <img src="/background.jpg" alt="About us background - AI technology" className="w-full h-full object-cover" />
     <div className="absolute inset-0" />
   </div>
 

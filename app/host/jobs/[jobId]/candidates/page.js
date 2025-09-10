@@ -82,6 +82,141 @@ export default function CandidatesDashboard() {
     }
   };
 
+  const downloadFeedbackPDF = async (candidateId, candidateName) => {
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/export-pdf`, {
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Create a new window with the HTML content for printing/saving as PDF
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(data.htmlContent);
+        printWindow.document.close();
+        
+        // Auto-trigger print dialog (user can save as PDF)
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      } else {
+        alert(data.error || 'Failed to generate PDF report');
+      }
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      alert('Failed to generate PDF report. Please try again.');
+    }
+  };
+
+  const exportAllFeedback = async () => {
+    try {
+      // Filter candidates who have completed interviews
+      const candidatesWithFeedback = candidates.filter(c => c.voiceInterviewCompleted);
+      
+      if (candidatesWithFeedback.length === 0) {
+        alert('No candidates have completed voice interviews yet.');
+        return;
+      }
+
+      // Generate combined report
+      let combinedHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Complete Candidate Evaluation Report - ${job?.jobTitle}</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                .header { text-align: center; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+                .candidate-section { page-break-before: always; margin-bottom: 40px; border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; }
+                .candidate-header { background: #f8fafc; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; }
+                .score-row { display: flex; justify-content: space-around; margin: 20px 0; text-align: center; }
+                .score-item { padding: 15px; background: #f0f9ff; border-radius: 8px; }
+                .score { font-size: 24px; font-weight: bold; color: #2563eb; }
+                .label { color: #6b7280; font-size: 12px; }
+                h1 { color: #2563eb; margin: 0; }
+                h2 { color: #1f2937; }
+                h3 { color: #374151; margin-top: 20px; }
+                .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+                .feedback-item { padding: 10px; background: #fefefe; border: 1px solid #e5e7eb; border-radius: 6px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Complete Candidate Evaluation Report</h1>
+                <p><strong>${job?.jobTitle}</strong> - ${candidatesWithFeedback.length} Candidates Evaluated</p>
+                <p>Generated on: ${new Date().toLocaleDateString()}</p>
+            </div>
+      `;
+
+      candidatesWithFeedback.forEach((candidate, index) => {
+        combinedHTML += `
+          <div class="candidate-section">
+            <div class="candidate-header">
+              <h2>#${index + 1} - ${candidate.user.name}</h2>
+              <p><strong>Email:</strong> ${candidate.user.email} | <strong>Status:</strong> ${candidate.status.toUpperCase()}</p>
+            </div>
+            
+            <div class="score-row">
+              <div class="score-item">
+                <div class="score">${candidate.atsScore || 0}%</div>
+                <div class="label">ATS Score</div>
+              </div>
+              <div class="score-item">
+                <div class="score">${candidate.voiceInterviewScore || 0}%</div>
+                <div class="label">Interview</div>
+              </div>
+              <div class="score-item">
+                <div class="score">${candidate.finalScore || 0}%</div>
+                <div class="label">Final Score</div>
+              </div>
+            </div>
+
+            ${candidate.voiceInterviewFeedback ? `
+            <h3>Interview Performance</h3>
+            <div class="feedback-grid">
+              <div class="feedback-item">
+                <strong>Communication:</strong> ${candidate.voiceInterviewFeedback.communicationSkills}%
+              </div>
+              <div class="feedback-item">
+                <strong>Technical:</strong> ${candidate.voiceInterviewFeedback.technicalKnowledge}%
+              </div>
+              <div class="feedback-item">
+                <strong>Problem Solving:</strong> ${candidate.voiceInterviewFeedback.problemSolving}%
+              </div>
+              <div class="feedback-item">
+                <strong>Confidence:</strong> ${candidate.voiceInterviewFeedback.confidence}%
+              </div>
+            </div>
+            ${candidate.voiceInterviewFeedback.detailedFeedback ? `
+            <p><strong>Detailed Feedback:</strong> ${candidate.voiceInterviewFeedback.detailedFeedback}</p>
+            ` : ''}
+            ` : ''}
+          </div>
+        `;
+      });
+
+      combinedHTML += `
+          </body>
+        </html>
+      `;
+
+      // Open in new window for printing/saving
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(combinedHTML);
+      printWindow.document.close();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+
+    } catch (error) {
+      console.error('Failed to export all feedback:', error);
+      alert('Failed to generate combined report. Please try again.');
+    }
+  };
+
   const filteredCandidates = candidates.filter(candidate => 
     !statusFilter || candidate.status === statusFilter
   );
@@ -130,6 +265,13 @@ export default function CandidatesDashboard() {
               </div>
 
               <div className="flex space-x-3">
+                <button
+                  onClick={() => exportAllFeedback()}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Export All Reports</span>
+                </button>
                 {selectedCandidates.length > 0 && (
                   <button
                     onClick={handleFinalizeSelection}
@@ -150,6 +292,7 @@ export default function CandidatesDashboard() {
                 candidate={candidate}
                 isSelected={selectedCandidates.includes(candidate.id)}
                 onSelect={() => handleSelectCandidate(candidate.id)}
+                onDownloadPDF={downloadFeedbackPDF}
                 job={job}
               />
             ))}
@@ -162,7 +305,7 @@ export default function CandidatesDashboard() {
   );
 }
 
-function CandidateCard({ candidate, isSelected, onSelect, job }) {
+function CandidateCard({ candidate, isSelected, onSelect, onDownloadPDF, job }) {
   const [showDetails, setShowDetails] = useState(false);
 
   const getStatusColor = (status) => {
@@ -213,11 +356,20 @@ function CandidateCard({ candidate, isSelected, onSelect, job }) {
                 href={candidate.resumeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-gray-400 hover:text-blue-600"
+                className="p-2 text-gray-400 hover:text-blue-600 border border-gray-200 rounded"
                 title="Download Resume"
               >
                 <Download className="h-4 w-4" />
               </a>
+              <button
+                onClick={() => onDownloadPDF(candidate.id, candidate.user.name)}
+                className="p-2 text-gray-400 hover:text-green-600 border border-green-200 rounded bg-green-50"
+                title="Download Feedback Report (PDF)"
+                disabled={!candidate.voiceInterviewCompleted}
+              >
+                <Download className="h-4 w-4" />
+                <span className="sr-only">PDF Report</span>
+              </button>
               <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="p-2 text-gray-400 hover:text-blue-600"
@@ -315,6 +467,16 @@ function CandidateCard({ candidate, isSelected, onSelect, job }) {
                         <span className="text-sm text-gray-600">Confidence</span>
                         <span className="text-sm font-medium">{candidate.voiceInterviewFeedback.confidence}%</span>
                       </div>
+                    </div>
+                    {candidate.voiceInterviewFeedback.detailedFeedback && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm font-medium text-gray-900 mb-1">Detailed Feedback:</p>
+                        <p className="text-sm text-gray-600">{candidate.voiceInterviewFeedback.detailedFeedback}</p>
+                      </div>
+                    )}
+                    <div className="mt-3 flex justify-between text-xs text-gray-500">
+                      <span>Duration: {candidate.voiceInterviewFeedback.interviewDuration || 'N/A'} min</span>
+                      <span>Questions: {candidate.voiceInterviewFeedback.answeredQuestions || 0}/{candidate.voiceInterviewFeedback.totalQuestions || 0}</span>
                     </div>
                   </div>
                 )}

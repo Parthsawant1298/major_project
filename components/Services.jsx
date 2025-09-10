@@ -52,42 +52,42 @@ export default function ServicesWithStats() {
     {
       title: "AI Interview Simulator",
       icon: Video,
-      image: "/service.webp",
+      image: "https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&w=600&h=400&q=80",
       iconColor: "blue",
       description: "Practice with realistic interview scenarios and receive instant AI feedback on your performance."
     },
     {
       title: "Resume Enhancement",
       icon: FileText,
-      image: "/service-2.jpeg",
+      image: "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=600&h=400&q=80",
       iconColor: "green",
       description: "AI-powered resume analysis and optimization to help you stand out to potential employers."
     },
     {
       title: "Personalized Learning",
       icon: BookOpen,
-      image: "/service-3.jpeg",
+      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=600&h=400&q=80",
       iconColor: "blue",
       description: "Custom learning paths based on your skills, goals, and industry demands to fill your knowledge gaps."
     },
     {
       title: "Skill Assessment",
       icon: Award,
-      image: "/service-4.jpg",
+      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&h=400&q=80",
       iconColor: "purple",
       description: "Comprehensive assessment of technical and soft skills with detailed feedback and improvement strategies."
     },
     {
       title: "AI Career Assistant",
       icon: MessageSquare,
-      image: "/service-5.avif",
+      image: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&h=400&q=80",
       iconColor: "blue",
       description: "24/7 AI-powered career guidance and job search assistance for immediate support."
     },
     {
       title: "Expert Mentorship",
       icon: User,
-      image: "/service-6.webp",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&h=400&q=80",
       iconColor: "orange",
       description: "Connect with industry professionals for personalized guidance, career advice, and networking opportunities."
     }
